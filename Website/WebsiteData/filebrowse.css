@@ -1,0 +1,126 @@
+a
+{
+	color: #f0f0ff;
+
+	display: inline-block;
+	padding: 0.16em 0.3em;
+	padding-left: 0.1em;
+	margin-bottom: 0.17em;
+
+	text-decoration: none;
+
+	font-size: 1.0242em;
+	font-family: sans-serif;
+
+	backdrop-filter: blur(0.065em);
+}
+.BrowserBackground
+{
+	background: #3a3716 linear-gradient(to bottom, #003679 76.345%, #FF3EEC 90%, #003679 100%) repeat;
+	background-size: auto 0.537em;
+}
+.file
+{
+	--ico: url("/Media/Ico/File.gif");
+	background: #11394280;
+}
+.directory
+{
+	--ico: url("/Media/Ico/Folder.gif");
+	background: #7C550380;
+}
+.error
+{
+	background-color: red;
+	color: white;
+}
+.directory, .file
+{
+	border: outset red 0.1036em;
+	border-radius: 0.1em;
+}
+.directory::before, .file::before
+{
+	content: "#";
+	color: transparent;
+
+	background: transparent var(--ico) no-repeat;
+	background-size: contain;
+	background-position: center;
+	image-rendering: pixelated;
+	
+	display: inline-block;
+	width: 1.3em;
+	height: 100%;
+
+	transform-origin: left center;
+	transform: scale(0.82);
+
+	margin-right: -0.2em;
+}
+.directory:hover, .file:hover, .error:hover
+{
+	filter: brightness(137%);
+}
+
+.file[href$=".txt" i]
+{
+	--ico: url("/Media/Ico/Text File.gif");
+}
+
+.file[href$=".html" i],
+.file[href$=".htmle" i],
+.file[href$=".htm" i],
+.file[href$=".mhtml" i]
+{
+	--ico: url("/Media/Ico/HTML File.gif");
+}
+.file[href$=".svg" i],
+.file[href$=".jpg" i],
+.file[href$=".jpeg" i],
+.file[href$=".png" i],
+.file[href$=".gif" i],
+.file[href$=".apng" i],
+.file[href$=".webp" i],
+.file[href$=".jfif" i],
+.file[href$=".tiff" i],
+.file[href$=".dng" i],
+.file[href$=".raw" i],
+.file[href$=".heic" i],
+.file[href$=".avif" i],
+.file[href$=".ico" i]
+{
+	--ico: url("/Media/Ico/Image File.gif");
+}
+.file[href$=".mp4" i],
+.file[href$=".mov" i],
+.file[href$=".webm" i],
+.file[href$=".mjpeg" i],
+.file[href$=".avi" i],
+.file[href$=".mkv" i],
+.file[href$=".flv" i],
+.file[href$=".vob" i],
+.file[href$=".ogv" i],
+.file[href$=".mts" i],
+.file[href$=".m2ts" i]
+.file[href$=".ts" i]
+.file[href$=".qt" i]
+.file[href$=".wmv" i]
+.file[href$=".yuv" i]
+.file[href$=".m4v" i]
+.file[href$=".3gp" i]
+{
+	--ico: url("/Media/Ico/Video File.gif");
+}
+.file[href$=".exe" i],
+.file[href$=".com" i],
+.file[href$=".scr" i]
+{
+	--ico: url("/Media/Ico/Program Icon.gif");
+}
+.file[href$=".zip" i],
+.file[href$=".rar" i],
+.file[href$=".7z" i]
+{
+	--ico: url("/Media/Ico/ZIP.gif");
+}

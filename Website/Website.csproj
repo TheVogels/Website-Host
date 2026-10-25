@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  
+  <PropertyGroup>
+	<!-- Output -->
+	<OutputType>Exe</OutputType>
+	<ApplicationIcon>favicon.ico</ApplicationIcon>
+	
+	<!-- Code -->
+	<TargetFramework>net8.0</TargetFramework>
+	<RootNamespace>Website</RootNamespace>
+	<ImplicitUsings>disable</ImplicitUsings>
+	<Nullable>enable</Nullable>
+	<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+	<NoWarn>$(NoWarn);CS8600, CS8622, CS8602, IDE0028</NoWarn>
+	
+	<StartupObject>Website.Program</StartupObject>
+	
+	<!-- Interface -->
+	<UseWindowsForms>false</UseWindowsForms>
+	<UseWPF>false</UseWPF>
+	  
+	<!-- Recommended: LargeFileSupport -->
+	<DefineConstants>$(DefineConstants);LargeFileSupport</DefineConstants>
+	
+  </PropertyGroup>
+  
+</Project>
