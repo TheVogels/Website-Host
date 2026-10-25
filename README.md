@@ -9,14 +9,15 @@ To connect to the website, you will need to go to http://localhost:PORT/ in your
 To allow others to connect to your website, make a port forward and give them your... *GULP* IP Address.
 
 ## Basic Config file.
-The supported config options are listed if the file exists, and you can use "//" to have a comment in the config file.
+The supported config options are listed if the file exists, and you can use ```//``` to have a comment in the config file.
 
-What you will mostly need to specify is:
-
+What you at minimum need to specify is:
+```
 // Directory for the website files.
 SourcePath: (PATH TO THE FOLDER THIS PROGRAM WILL SERVER TO BROWSERS WILL GO HERE)
 // Website Port
 port: 900
+```
 
 ## Keyboard Controls
 R - Reload config file.
