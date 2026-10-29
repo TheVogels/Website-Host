@@ -41,6 +41,12 @@ namespace Website
 		public static int File_MaxFileSizeForCompression = 715_827_863,
 			VideoFile_MaxFileSizeForCompression = 95_827_863;
 
+		#if LargeFileSupport
+		// Performance and RAM usage issues were happening before this was implemented.
+		// Turned out loading a file about the size of 2GB into RAM directly from the disk is slow.
+		public static int MaxBufferedFileSize = 586_346_556;
+		#endif
+
 		public static void ParseConfig(IEnumerable<string> Config, bool ShowSummary = true, bool DynamicReloadWarnings = false)
 		{
 			if(DynamicReloadWarnings)
@@ -137,6 +143,9 @@ namespace Website
 						Console.ForegroundColor = DefaultC;
 					}
 					break;
+					case "maxbufferedfilesize:":
+					MaxBufferedFileSize = int.Parse(atr);
+					break;
 					default:
 					Console.ForegroundColor = ErrorC;
 					Console.WriteLine("Unrecognized setting: {0}", op);
@@ -153,7 +162,7 @@ namespace Website
 
 				Console.WriteLine
 				(
-					"-- Config Summary --\n\nSourcePath: {0}\nPort: {1}\nEncoding: {2}\nForceInstantCloseConnection: {3}\nEnableCompression: {4}\nCompression Level: {5} ({6})\nCompressLargeFiles: {7}\nBufferLimit: {8}\nMaxFileSizeForCompression: {9}\nMaxVideoFileSizeForCompression: {10}\nEnableExternalFileRedirects: {11}\n", 
+					"-- Config Summary --\n\nSourcePath: {0}\nPort: {1}\nEncoding: {2}\nForceInstantCloseConnection: {3}\nEnableCompression: {4}\nCompression Level: {5} ({6})\nCompressLargeFiles: {7}\nBufferLimit: {8}\nMaxFileSizeForCompression: {9}\nMaxVideoFileSizeForCompression: {10}\nEnableExternalFileRedirects: {11}\nMaxBufferedFileSize: {12}\n", 
 					SourcePath, 
 					Port, 
 					encoding.EncodingName, 
@@ -164,7 +173,8 @@ namespace Website
 					BufferLimit,
 					File_MaxFileSizeForCompression,
 					VideoFile_MaxFileSizeForCompression,
-					EnableExternalFileRedirects
+					EnableExternalFileRedirects,
+					MaxBufferedFileSize
 				);
 				
 				Console.ForegroundColor = DefaultC;

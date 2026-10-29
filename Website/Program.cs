@@ -58,7 +58,9 @@ namespace Website
 
 			new Thread(DynamicLoadingListener)
 			{
-				IsBackground = true	
+				IsBackground = true,
+				Name = "Keyboard Thread",
+				Priority = ThreadPriority.BelowNormal,
 			}.Start();
 
 			data.Bind(new IPEndPoint(IPAddress.Any, Port));
@@ -74,7 +76,10 @@ namespace Website
 				Console.WriteLine("Listening for new incoming connections.");
 				data.Listen();
 
-				new Thread((object d) => HandleUser((Socket)d)).Start(data.Accept());
+				new Thread((object d) => HandleUser((Socket)d))
+				{
+					Name = "Web responder Thread",
+				}.Start(data.Accept());
 			}
 		}
 
@@ -102,7 +107,7 @@ namespace Website
 					case ConsoleKey.G:
 					Console.ForegroundColor = ReceiveC;
 					Console.WriteLine("Collect garbage.");
-					GC.Collect();
+					GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, true, true);
 					Console.WriteLine("Collected garbage.");
 					Console.ForegroundColor = DefaultC;
 					break;
@@ -273,6 +278,11 @@ namespace Website
 
 		struct FileWebResulter : WebResulter
 		{
+			public static bool Exists(string path)
+			{
+				return File.Exists(path) || (EnableExternalFileRedirects && File.Exists(path+".webextredir"));
+			}
+
 			public WebResulterResult GetResult(HeaderData header)
 			{
 				string Path = SourcePath+header.Path;
@@ -298,8 +308,8 @@ namespace Website
 					return new ErrorWebResulter(404).GetResult(header);
 
 				string type = GetFileType(Path);
-				bool LiveHTML = Path.EndsWith(".htmle", StringComparison.InvariantCultureIgnoreCase);
 
+				bool LiveHTML = Path.EndsWith(".htmle", StringComparison.InvariantCultureIgnoreCase);
 				if(LiveHTML)
 				{
 					string fileData = File.ReadAllText(Path, encoding);
@@ -348,10 +358,11 @@ namespace Website
 					long length = file.Length;
 
 					#if LargeFileSupport
-					if(length > Array.MaxLength)
+					bool a;
+					if((a = length > Array.MaxLength) || (MaxBufferedFileSize != -1 && length > MaxBufferedFileSize))
 					{
 						Console.ForegroundColor = MiscDefaultC;
-						Console.WriteLine("{0} elements is too large for the runtime to allocate, using a stream.", length);
+						Console.WriteLine(a ? "{0} elements is too large for the runtime to allocate, using a stream." : "File size {0} is larger than {1} bytes, using a stream.", length, MaxBufferedFileSize);
 						Console.ForegroundColor = DefaultC;
 
 						return new WebResulterResult{ContentS = file, flags = WebResulterResult.WebResulterResultFlags.DisposeOnDone};
@@ -456,7 +467,9 @@ namespace Website
 				if(header.ArgumentsP.TryGetValue("ignoremax", out string? _IgnoreMax))
 					IgnoreMax = IsYes(_IgnoreMax);
 				
-				IStringWriter HTML = new StringWriterEncoded(encoding, "<!DOCTYPE html>\r\n\r\n<html lang=\"en-US\">\r\n<head>\r\n<meta charset=\"UTF-8\">\r\n<meta name=\"viewport\" content=\"width=550\" />\r\n<title>Browse Files</title><link rel=\"stylesheet\" href=\"filebrowse.css\">\r\n<link rel=\"icon\" type=\"image/gif\" href=\"/Media/Ico/Folder_Icon.gif\"></head>\r\n\r\n<body class=\"BrowserBackground\">"u8);
+				IStringWriter HTML = new StringWriterEncoded(encoding, "<!DOCTYPE html>\r\n\r\n<html lang=\"en-US\">\r\n<head>\r\n<meta charset=\""u8);
+				HTML+= encoding.WebName;
+				HTML+= "\">\r\n<meta name=\"viewport\" content=\"width=550\" />\r\n<title>Browse Files</title><link rel=\"stylesheet\" href=\"filebrowse.css\">\r\n<link rel=\"icon\" type=\"image/gif\" href=\"/Media/Ico/Folder_Icon.gif\"></head>\r\n\r\n<body class=\"BrowserBackground\">"u8;
 
 				var SubPath = string.Empty;
 				if(header.ArgumentsP.TryGetValue("path", out SubPath) && !string.IsNullOrEmpty(SubPath))
@@ -546,7 +559,7 @@ namespace Website
 
 			public readonly string GetHeader(HeaderData header, WebResulterResult Result = default)
 			{
-				return BuildHeader(Expiry: DateTime.MinValue);
+				return BuildHeader(Expiry: DateTime.MinValue, Type: "text/html; charset="+encoding.WebName);
 			}
 		}
 
@@ -604,7 +617,7 @@ namespace Website
 				if(p.Exists)
 					return BuildHeader(IsFind ? HttpStatusCode.Found : HttpStatusCode.Moved, "text/html", Length: (Result == default ? Result.LongLength : p.Length).ToString(), Append: $"location: {Redirect}\n");
 				else
-					return BuildHeader(IsFind ? HttpStatusCode.Found : HttpStatusCode.Moved, "text/plain; charset=UTF-8", Length: "3", Append: $"location: {Redirect}\n");
+					return BuildHeader(IsFind ? HttpStatusCode.Found : HttpStatusCode.Moved, "text/plain; charset=us-ascii", Length: "3", Append: $"location: {Redirect}\n");
 			}
 		}
 
@@ -615,22 +628,30 @@ namespace Website
 				return $"<!DOCTYPE html>\r\n<head><html><head><meta charset=\"us-ascii\"><style>*{{width:100%;height:100%;margin:0;padding:0;overflow:hidden;background:black linear-gradient(to bottom,#222,#000);image-rendering:pixelated;object-fit:contain}}</style></head><body><video src=\"{HTMLURLEncode(WebPath)}\" controls></video></body></html>";
 			}
 
-			public WebResulterResult GetResult(HeaderData header)
+			public static byte[] ErrorHtml = Encoding.ASCII.GetBytes("<!DOCTYPE html>\r\n<head><html><head><meta charset=\"us-ascii\"><style>*{background:black linear-gradient(to bottom,#222,#000);font-family:sans-serif;width:100%;height:100%;color:white;margin:0;text-align:center;align-content:center}</style></head><body>The video file was not found.</body></html>");
+
+			public readonly WebResulterResult GetResult(HeaderData header)
 			{
 				var Path = header.ArgumentsP.GetValueOrDefault("path", "PROVIDE ?path");
 
-				if(!File.Exists(SourcePath+Path))
-					return new ErrorWebResulter(404).GetResult(header);
+				if(!FileWebResulter.Exists(SourcePath+Path))
+				{
+					//return new ErrorWebResulter(404).GetResult(header);
+					return ErrorHtml;
+				}
 				
 				return Encoding.ASCII.GetBytes(GetHTML(Path));
 			}
 
-			public string GetHeader(HeaderData header, WebResulterResult Result = default)
+			public readonly string GetHeader(HeaderData header, WebResulterResult Result = default)
 			{
 				var Path = header.ArgumentsP.GetValueOrDefault("path", "PROVIDE ?path");
 
-				if(!File.Exists(SourcePath+Path))
-					return new ErrorWebResulter(404).GetHeader(header);
+				if(!FileWebResulter.Exists(SourcePath+Path))
+				{
+					//return new ErrorWebResulter(404).GetHeader(header);
+					return BuildHeader(HttpStatusCode.OK, "text/html; charset=us-ascii", Length: ErrorHtml.Length.ToString());
+				}
 
 				return BuildHeader(HttpStatusCode.OK, "text/html; charset=us-ascii", Length: Result == default ? GetHTML(Path).Length.ToString() : Result.Length.ToString());
 			}
@@ -849,7 +870,8 @@ namespace Website
 							//data.ContentB = new ArraySegment<byte>(data.ContentB, (int)RangeStart, (int)(RangeEnd-RangeStart+1)).ToArray();
 							var old = data.ContentB;
 							data.ContentB = new byte[RangeEnd-RangeStart+1];
-							Array.Copy(old, RangeStart, data.ContentB, 0, data.ContentB.LongLength);
+							// MAYBE CHANGE THIS BEHAVIOUR!!!
+							Array.Copy(old, RangeStart, data.ContentB, 0, Math.Min(data.ContentB.LongLength, old.LongLength));
 						}
 						if(data.ContentS != null)
 							data.ContentS = new StreamSlice(data.ContentS, RangeStart, RangeEnd-RangeStart+1);
@@ -986,7 +1008,7 @@ namespace Website
 				if(d.Connected)
 				{
 					var text = encoding.GetBytes(e.ToString());
-					d.Send(encoding.GetBytes(BuildHeader(HttpStatusCode.FailedDependency, "text/plain; charset=UTF-8", Length: text.Length.ToString(), ConnectionMode: "Close")+"\r\n"));
+					d.Send(encoding.GetBytes(BuildHeader(HttpStatusCode.FailedDependency, "text/plain; charset="+encoding.WebName, Length: text.Length.ToString(), ConnectionMode: "Close")+"\r\n"));
 					d.Send(text);
 					d.Close(900);
 				}
